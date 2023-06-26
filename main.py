@@ -2,6 +2,8 @@ import tkinter
 from tkinter import ttk
 from docxtpl import DocxTemplate
 import datetime
+from datetime import date
+from tkinter import messagebox
 
 # Functions
 
@@ -44,10 +46,10 @@ def gen_invoice():
     area = area_entry.get()
     zip = zip_entry.get()
     total = sum(item[3] for item in invoice_list)
-    #date = datetime.date
+    current_date = date.today()
     
     doc.render({
-        #"date" : date,
+        "date" : current_date,
         "name" : name,
         "PObox" : PObox,
         "area" : area,
@@ -58,6 +60,10 @@ def gen_invoice():
     
     doc_name = "new_invoice " + name + " " + datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S") + ".docx"
     doc.save(doc_name)
+    
+    messagebox.showinfo("Invoice Generation", "Invoice Completed")
+    
+    new_invoice()
     
     
 # Main Window
