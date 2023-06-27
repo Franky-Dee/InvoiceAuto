@@ -1,14 +1,76 @@
 import datetime
 import customtkinter as tkinter
-import aspose.words as aw
+import docx2pdf
 from customtkinter import CTkLabel, CTkEntry, CTkButton, CTkFrame
 from tkinter import ttk
 from tkinter import messagebox
 from docxtpl import DocxTemplate
 from datetime import date
-
+from docx2pdf import convert
 
 # Functions
+def new_recipient():
+    new_win = tkinter.CTkToplevel()
+    new_win.title("Add a New Recipient")
+    new_win.attributes('-topmost', True)
+
+    instructionsR_label = CTkLabel(
+        new_win, text="Please enter all information regarding the recipient of the invoice :")
+    instructionsR_label.grid(row=1, column=0, padx=10, pady=5)
+
+    name_label = CTkLabel(new_win, text="Recipient Name")
+    name_label.grid(row=2, column=0, pady=5)
+    name_entry = CTkEntry(new_win)
+    name_entry.grid(row=2, column=1, padx=10, pady=5)
+
+    email_label = CTkLabel(new_win, text="Recipient Email Address")
+    email_label.grid(row=3, column=0, pady=5)
+    email_entry = CTkEntry(new_win)
+    email_entry.grid(row=3, column=1, padx=10, pady=5)
+
+    PO_label = CTkLabel(new_win, text="P.O. Box")
+    PO_label.grid(row=4, column=0, pady=5)
+    PO_entry = CTkEntry(new_win)
+    PO_entry.grid(row=4, column=1, padx=10, pady=5)
+
+    area_label = CTkLabel(new_win, text="Recipient Area")
+    area_label.grid(row=5, column=0, pady=5)
+    area_entry = CTkEntry(new_win)
+    area_entry.grid(row=5, column=1, padx=10, pady=5)
+
+    zip_label = CTkLabel(new_win, text="Zip Code")
+    zip_label.grid(row=6, column=0, pady=5)
+    zip_entry = CTkEntry(new_win)
+    zip_entry.grid(row=6, column=1, padx=10, pady=5)
+
+    add_item_btn = CTkButton(new_win, text="Add Recipient", command=create_profile)
+    add_item_btn.grid(row=7, column=0, padx=10, pady=10,
+                      columnspan=2, sticky="news")
+
+def create_profile():
+    print("created")
+
+def get_last_invoice_number():
+    try:
+        with open("last_invoice_number.txt", "r") as file:
+            return int(file.read())
+    except FileNotFoundError:
+        return 0
+
+
+def update_invoice_number(new_invoice_number):
+    with open("last_invoice_number.txt", "w") as file:
+        file.write(str(new_invoice_number))
+
+
+def update_invoice_number(new_invoice_number):
+    with open("last_invoice_number.txt", "w") as file:
+        file.write(str(new_invoice_number))
+
+
+last_invoice_number = get_last_invoice_number()
+new_invoice_number = last_invoice_number + 1
+update_invoice_number(new_invoice_number)
 
 
 def clear_items():
@@ -54,6 +116,7 @@ def gen_invoice_docx():
     zip = zip_entry.get()
     total = sum(item[3] for item in invoice_list)
     current_date = date.today()
+    inNo = new_invoice_number
 
     doc.render({
         "date": current_date,
@@ -62,7 +125,8 @@ def gen_invoice_docx():
         "area": area,
         "zip": zip,
         "invoice_list": invoice_list,
-        "total": total
+        "total": total,
+        "inNo": inNo
     })
 
     doc_name = "new_invoice " + name + " " + \
@@ -97,8 +161,9 @@ def gen_invoice_pdf():
         datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S") + ".docx"
     doc.save(doc_name)
 
-    doc_pdf = aw.Document(doc_name)
-    doc.save("test.pdf")
+    convert(doc_name)
+
+    messagebox.showinfo("Invoice Generation", "Invoice Completed")
 
 
 # Main Window
@@ -110,60 +175,46 @@ tkinter.set_appearance_mode("light")
 frame = CTkFrame(mainWindow)
 frame.pack(padx=20, pady=20)
 
+title_label = CTkLabel(frame, text="Invoice Generator")
+title_label.grid(row=0, column=0, pady=10, columnspan=3)
+
 # Information to be entered by the user regarding recipient
-instructionsR_label = CTkLabel(
-    frame, text="Please enter all information regarding the recipient of the invoice :")
-instructionsR_label.grid(row=0, column=0, pady=5)
+selectR_label = tkinter.CTkLabel(
+    frame, text="Select the invoice recipient or add a new recipient")
+selectR_label.grid(row=1, column=0, padx=10, pady=10)
 
-name_label = CTkLabel(frame, text="Recipient Name")
-name_label.grid(row=1, column=0, pady=5)
-name_entry = CTkEntry(frame)
-name_entry.grid(row=1, column=1, pady=5)
+new_recipient_btn = CTkButton(
+    frame, text="Add a recipient", command=new_recipient)
+new_recipient_btn.grid(row=2, column=1,
+                       padx=20, pady=10)
 
-email_label = CTkLabel(frame, text="Recipient Email Address")
-email_label.grid(row=2, column=0, pady=5)
-email_entry = CTkEntry(frame)
-email_entry.grid(row=2, column=1, pady=5)
-
-PO_label = CTkLabel(frame, text="P.O. Box")
-PO_label.grid(row=3, column=0, pady=5)
-PO_entry = CTkEntry(frame)
-PO_entry.grid(row=3, column=1, pady=5)
-
-area_label = CTkLabel(frame, text="Recipient Area")
-area_label.grid(row=4, column=0, pady=5)
-area_entry = CTkEntry(frame)
-area_entry.grid(row=4, column=1, pady=5)
-
-zip_label = CTkLabel(frame, text="Zip Code")
-zip_label.grid(row=5, column=0, pady=5)
-zip_entry = CTkEntry(frame)
-zip_entry.grid(row=5, column=1, pady=5)
+drop_menu = tkinter.CTkOptionMenu(frame, values=["1", "2", "3"])
+drop_menu.grid(row=1, column=1)
 
 # Information entered by user regarding invoice item
 instructionsI_label = CTkLabel(
     frame, text="Please enter all information regarding items to be added to the invoice :")
-instructionsI_label.grid(row=6, column=0, pady=5)
+instructionsI_label.grid(row=3, column=0, padx=10, pady=5)
 
 qty_label = CTkLabel(frame, text="Quantity")
-qty_label.grid(row=7, column=0, pady=5)
+qty_label.grid(row=4, column=0, pady=5)
 qty_spin = ttk.Spinbox(frame, from_=1, to=1000)
-qty_spin.grid(row=7, column=1, pady=5)
+qty_spin.grid(row=4, column=1, pady=5)
 qty_spin.insert(0, "1")
 
 description_label = CTkLabel(frame, text="Description")
-description_label.grid(row=8, column=0, pady=5)
+description_label.grid(row=5, column=0, pady=5)
 description_entry = CTkEntry(frame)
-description_entry.grid(row=8, column=1, pady=5)
+description_entry.grid(row=5, column=1, pady=5)
 
 rate_label = CTkLabel(frame, text="Rate")
-rate_label.grid(row=10, column=0, pady=5)
+rate_label.grid(row=6, column=0, pady=5)
 rate_spin = ttk.Spinbox(frame, from_=1, to=1000000, increment=0.5)
-rate_spin.grid(row=10, column=1, pady=5)
+rate_spin.grid(row=6, column=1, pady=5)
 rate_spin.insert(0, "0.0")
 
 add_item_btn = CTkButton(frame, text="Add Item", command=add_item)
-add_item_btn.grid(row=11, column=0, pady=5)
+add_item_btn.grid(row=6, column=0, pady=10)
 
 # Tree View
 columns = ("Quantity", "Description", "Rate", "Total")
@@ -174,23 +225,26 @@ tree.heading("Description", text="Description")
 tree.heading("Rate", text="Rate")
 tree.heading("Total", text="Total")
 
-tree.grid(row=0, column=2, rowspan=9, padx=20, pady=10)
+tree.grid(row=0, column=2, rowspan=8, padx=20, pady=10)
 
 # Final Buttons
 save_invoicedocx_btn = CTkButton(
     frame, text="Generate Word Invoice", command=gen_invoice_docx)
-save_invoicedocx_btn.grid(row=10, column=0, columnspan=3, padx=20, pady=5)
+save_invoicedocx_btn.grid(row=7, column=0, columnspan=3,
+                          sticky="news", padx=20, pady=5)
 
 save_invoicepdf_btn = CTkButton(
     frame, text="Generate PDF Invoice", command=gen_invoice_pdf)
-save_invoicepdf_btn.grid(row=11, column=0, columnspan=3, padx=20, pady=5)
+save_invoicepdf_btn.grid(row=8, column=0, columnspan=3,
+                         sticky="news", padx=20, pady=5)
 
 email_btn = CTkButton(
     frame, text="Send invoice to recipient through email")
-email_btn.grid(row=12, column=0, columnspan=3, padx=20, pady=5)
+email_btn.grid(row=9, column=0, columnspan=3, sticky="news", padx=20, pady=5)
 
 new_invoice_btn = CTkButton(
     frame, text="New Invoice", command=new_invoice)
-new_invoice_btn.grid(row=13, column=0, columnspan=3, padx=20, pady=10)
+new_invoice_btn.grid(row=10, column=0, columnspan=3,
+                     sticky="news", padx=20, pady=10)
 
 mainWindow.mainloop()
