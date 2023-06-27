@@ -1,6 +1,7 @@
 import datetime
 import customtkinter as tkinter
 import docx2pdf
+import sqlite3
 from customtkinter import CTkLabel, CTkEntry, CTkButton, CTkFrame
 from tkinter import ttk
 from tkinter import messagebox
@@ -8,7 +9,22 @@ from docxtpl import DocxTemplate
 from datetime import date
 from docx2pdf import convert
 
-# Functions
+# Variables ---------------------------------------------------
+global name
+global email
+global PO
+global area
+global zipCode
+
+# Create Table ---------------------------------------------------
+connProfile = sqlite3.connect("profile_data.db")
+profile_table_create_query = '''CREATE TABLE IF NOT EXISTS profile_data (name TEXT, email TEXT, PO_box TEXT, area TEXT, zip_code TEXT)'''
+connProfile.execute(profile_table_create_query)
+connProfile.close()
+
+# New Recipient ---------------------------------------------------
+
+
 def new_recipient():
     new_win = tkinter.CTkToplevel()
     new_win.title("Add a New Recipient")
@@ -43,12 +59,54 @@ def new_recipient():
     zip_entry = CTkEntry(new_win)
     zip_entry.grid(row=6, column=1, padx=10, pady=5)
 
-    add_item_btn = CTkButton(new_win, text="Add Recipient", command=create_profile)
+    def create_profile():
+        name = name_entry.get()
+        email = email_entry.get()
+        PO = PO_entry.get()
+        area = area_entry.get()
+        zipCode = zip_entry.get()
+
+        if name and email and PO and area and zipCode:
+            # SQL INSERT
+            connProfile = sqlite3.connect("profile_data.db")
+            Pdata_insert_query = ''' INSERT INTO profile_data (name, email, PO_box, area, zip_code) VALUES (?, ?, ?, ?, ?) '''
+            Pdata_insert_tuple = (name, email, PO, area, zipCode)
+            cursor = connProfile.cursor()
+            cursor.execute(Pdata_insert_query, Pdata_insert_tuple)
+            connProfile.commit()
+            connProfile.close()
+            messagebox.showinfo("Creation Successful",
+                                "A new recipient has been created and added")
+            name_entry.delete(0, tkinter.END)
+            email_entry.delete(0, tkinter.END)
+            area_entry.delete(0, tkinter.END)
+            PO_entry.delete(0, tkinter.END)
+            zip_entry.delete(0, tkinter.END)
+        else:
+            messagebox.showwarning(
+                "Empty Fields", "Please complete all the fields")
+
+    add_item_btn = CTkButton(
+        new_win, text="Add Recipient", command=create_profile)
     add_item_btn.grid(row=7, column=0, padx=10, pady=10,
                       columnspan=2, sticky="news")
 
-def create_profile():
-    print("created")
+    close_btn = CTkButton(
+        new_win, text="Close", command=new_win.destroy)
+    close_btn.grid(row=8, column=0, padx=10, pady=10,
+                   columnspan=2, sticky="news")
+
+# Functions ---------------------------------------------------
+def recipient_option_box_values():
+    connProfile = sqlite3.connect("profile_data.db")
+    cursor = connProfile.cursor()
+    query = cursor.execute('SELECT name FROM profile_data')
+
+    data = []
+    for row in cursor.fetchall():
+        data.append(row[0])
+    return data
+
 
 def get_last_invoice_number():
     try:
@@ -98,10 +156,6 @@ def add_item():
 
 
 def new_invoice():
-    name_entry.delete(0, tkinter.END)
-    PO_entry.delete(0, tkinter.END)
-    area_entry.delete(0, tkinter.END)
-    zip_entry.delete(0, tkinter.END)
     clear_items()
     tree.delete(*tree.get_children())
 
@@ -110,10 +164,7 @@ def new_invoice():
 
 def gen_invoice_docx():
     doc = DocxTemplate("invoice_template.docx")
-    name = name_entry.get()
-    PObox = PO_entry.get()
-    area = area_entry.get()
-    zip = zip_entry.get()
+    # Variables = SELECT from db
     total = sum(item[3] for item in invoice_list)
     current_date = date.today()
     inNo = new_invoice_number
@@ -121,9 +172,9 @@ def gen_invoice_docx():
     doc.render({
         "date": current_date,
         "name": name,
-        "PObox": PObox,
+        "PObox": PO,
         "area": area,
-        "zip": zip,
+        "zip": zipCode,
         "invoice_list": invoice_list,
         "total": total,
         "inNo": inNo
@@ -166,7 +217,7 @@ def gen_invoice_pdf():
     messagebox.showinfo("Invoice Generation", "Invoice Completed")
 
 
-# Main Window
+# Main Window ---------------------------------------------------
 mainWindow = tkinter.CTk()
 mainWindow.title("Invoice Generator")
 
@@ -178,7 +229,7 @@ frame.pack(padx=20, pady=20)
 title_label = CTkLabel(frame, text="Invoice Generator")
 title_label.grid(row=0, column=0, pady=10, columnspan=3)
 
-# Information to be entered by the user regarding recipient
+# Information to be entered by the user regarding recipient ---------------------------------------------------
 selectR_label = tkinter.CTkLabel(
     frame, text="Select the invoice recipient or add a new recipient")
 selectR_label.grid(row=1, column=0, padx=10, pady=10)
@@ -188,10 +239,10 @@ new_recipient_btn = CTkButton(
 new_recipient_btn.grid(row=2, column=1,
                        padx=20, pady=10)
 
-drop_menu = tkinter.CTkOptionMenu(frame, values=["1", "2", "3"])
+drop_menu = tkinter.CTkOptionMenu(frame, values=recipient_option_box_values())
 drop_menu.grid(row=1, column=1)
 
-# Information entered by user regarding invoice item
+# Information entered by user regarding invoice item ---------------------------------------------------
 instructionsI_label = CTkLabel(
     frame, text="Please enter all information regarding items to be added to the invoice :")
 instructionsI_label.grid(row=3, column=0, padx=10, pady=5)
@@ -214,9 +265,9 @@ rate_spin.grid(row=6, column=1, pady=5)
 rate_spin.insert(0, "0.0")
 
 add_item_btn = CTkButton(frame, text="Add Item", command=add_item)
-add_item_btn.grid(row=6, column=0, pady=10)
+add_item_btn.grid(row=7, column=0, pady=10)
 
-# Tree View
+# Tree View ---------------------------------------------------
 columns = ("Quantity", "Description", "Rate", "Total")
 tree = ttk.Treeview(frame, columns=columns, show="headings")
 
@@ -227,24 +278,25 @@ tree.heading("Total", text="Total")
 
 tree.grid(row=0, column=2, rowspan=8, padx=20, pady=10)
 
-# Final Buttons
+# Final Buttons ---------------------------------------------------
 save_invoicedocx_btn = CTkButton(
     frame, text="Generate Word Invoice", command=gen_invoice_docx)
-save_invoicedocx_btn.grid(row=7, column=0, columnspan=3,
+save_invoicedocx_btn.grid(row=8, column=0, columnspan=3,
                           sticky="news", padx=20, pady=5)
 
 save_invoicepdf_btn = CTkButton(
     frame, text="Generate PDF Invoice", command=gen_invoice_pdf)
-save_invoicepdf_btn.grid(row=8, column=0, columnspan=3,
+save_invoicepdf_btn.grid(row=9, column=0, columnspan=3,
                          sticky="news", padx=20, pady=5)
 
 email_btn = CTkButton(
     frame, text="Send invoice to recipient through email")
-email_btn.grid(row=9, column=0, columnspan=3, sticky="news", padx=20, pady=5)
+email_btn.grid(row=10, column=0, columnspan=3, sticky="news", padx=20, pady=5)
 
 new_invoice_btn = CTkButton(
     frame, text="New Invoice", command=new_invoice)
-new_invoice_btn.grid(row=10, column=0, columnspan=3,
+new_invoice_btn.grid(row=11, column=0, columnspan=3,
                      sticky="news", padx=20, pady=10)
+
 
 mainWindow.mainloop()
