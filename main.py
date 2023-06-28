@@ -164,7 +164,7 @@ def new_invoice():
 
 def gen_invoice_docx():
     doc = DocxTemplate("invoice_template.docx")
-    # Variables = SELECT from db
+    # Variables = SELECT from db WHERE name = combo
     total = sum(item[3] for item in invoice_list)
     current_date = date.today()
     inNo = new_invoice_number
@@ -191,19 +191,16 @@ def gen_invoice_docx():
 
 def gen_invoice_pdf():
     doc = DocxTemplate("invoice_template.docx")
-    name = name_entry.get()
-    PObox = PO_entry.get()
-    area = area_entry.get()
-    zip = zip_entry.get()
+    # Variables = SELECT from db WHERE name = combo
     total = sum(item[3] for item in invoice_list)
     current_date = date.today()
 
     doc.render({
         "date": current_date,
         "name": name,
-        "PObox": PObox,
+        "PObox": PO,
         "area": area,
-        "zip": zip,
+        "zip": zipCode,
         "invoice_list": invoice_list,
         "total": total
     })
