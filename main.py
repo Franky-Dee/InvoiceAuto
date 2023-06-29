@@ -15,6 +15,7 @@ global email
 global PO
 global area
 global zipCode
+global description
 invoice_list = []
 
 # Create Tables ----------------------------------------------------------------------------------------------------------------------------------
@@ -29,7 +30,24 @@ connDesc.execute(desc_table_create_query)
 connDesc.close()
 
 # New Recipient / New Description ---------------------------------------------------------------------------------------------------------------
-
+def fetch_profile_data():
+    connProfile = sqlite3.connect("profile_data.db")
+    cursor = connProfile.cursor()
+    
+    selected_name = drop_menu.get()
+    cursor.execute("SELECT * FROM  profile_data WHERE name=?", (selected_name))
+    data = cursor.fetchone()
+    
+    if data:
+        name = data[0]
+        email = data[1]
+        PO = data[2]
+        area = data[3]
+        zipCode = data[4]
+        
+    cursor.close()
+    connProfile.close()
+    
 
 def new_desc():
     new_win = tkinter.CTkToplevel()
@@ -38,12 +56,12 @@ def new_desc():
 
     instructionsR_label = CTkLabel(
         new_win, text="Please enter the description you would like to add :", font=("Calibri", 16))
-    instructionsR_label.grid(row=1, column=0, padx=10, pady=5)
+    instructionsR_label.grid(row=0, column=0, padx=10, pady=5)
 
     desc_label = CTkLabel(new_win, text="Description", font=("Calibri", 16))
-    desc_label.grid(row=2, column=0, pady=5)
+    desc_label.grid(row=1, column=0, pady=5)
     desc_entry = CTkEntry(new_win)
-    desc_entry.grid(row=2, column=1, padx=10, pady=5)
+    desc_entry.grid(row=1, column=1, padx=10, pady=5)
 
     def create_desc():
         desc = desc_entry.get()
@@ -51,10 +69,9 @@ def new_desc():
         if desc:
             # SQL INSERT
             connDesc = sqlite3.connect("description_data.db")
-            Pdata_insert_query = ''' INSERT INTO description_data (name, email, PO_box, area, zip_code) VALUES (?, ?, ?, ?, ?) '''
-            Pdata_insert_tuple = (desc)
+            data_insert_query = ''' INSERT INTO description_data (description) VALUES (?) '''
             cursor = connDesc.cursor()
-            cursor.execute(Pdata_insert_query, Pdata_insert_tuple)
+            cursor.execute(data_insert_query, (desc,))
             connDesc.commit()
             connDesc.close()
             messagebox.showinfo("Creation Successful",
@@ -67,13 +84,13 @@ def new_desc():
                 "Empty Fields", "Please complete all the fields")
 
     add_desc_btn = CTkButton(
-        new_win, text="Add Recipient", command=create_desc)
-    add_item_btn.grid(row=7, column=0, padx=10, pady=10,
+        new_win, text="Add Description", command=create_desc)
+    add_desc_btn.grid(row=2, column=0, padx=10, pady=10,
                       columnspan=2, sticky="news")
 
     close_btn = CTkButton(
         new_win, text="Close", command=new_win.destroy)
-    close_btn.grid(row=8, column=0, padx=10, pady=10,
+    close_btn.grid(row=3, column=0, padx=10, pady=10,
                    columnspan=2, sticky="news")
 
 
@@ -121,7 +138,7 @@ def new_recipient():
 
         if name and email and PO and area and zipCode:
             # SQL INSERT
-            connProfile = sqlite3.connect("description_data.db")
+            connProfile = sqlite3.connect("profile_data.db")
             Pdata_insert_query = ''' INSERT INTO profile_data (name, email, PO_box, area, zip_code) VALUES (?, ?, ?, ?, ?) '''
             Pdata_insert_tuple = (name, email, PO, area, zipCode)
             cursor = connProfile.cursor()
@@ -157,7 +174,7 @@ def new_recipient():
 def description_option_box_values():
     connDesc = sqlite3.connect("description_data.db")
     cursor = connDesc.cursor()
-    query = cursor.execute('SELECT name FROM description_data')
+    query = cursor.execute('SELECT description FROM description_data')
 
     data = []
     for row in cursor.fetchall():
@@ -204,8 +221,9 @@ def clear_items():
 def add_item():
     qty = int(qty_spin.get())
     rate = float(rate_spin.get())
+    description = desc_drop_menu.get()
     amount = qty*rate
-    invoice_item = [qty, rate, amount]
+    invoice_item = [qty, description, rate, amount]
 
     tree.insert("", 0, values=invoice_item)
     clear_items()
@@ -222,7 +240,7 @@ def new_invoice():
 
 def gen_invoice_docx():
     doc = DocxTemplate("invoice_template.docx")
-    # Variables = SELECT from db WHERE name = combo
+    fetch_profile_data()
     total = sum(item[3] for item in invoice_list)
     current_date = date.today()
     inNo = new_invoice_number
@@ -291,7 +309,7 @@ invoice_items_frame.grid(row=1, column=1, pady=10, padx=10)
 export_frame = CTkFrame(mainWindow, border_width=3)
 export_frame.grid(row=1, column=2, pady=10, padx=10)
 
-# Recipeint Frame -------------------------------------------------------------------------------------------------------------------------------
+# Recipient Frame -------------------------------------------------------------------------------------------------------------------------------
 title_label = CTkLabel(
     recipient_frame, text="Invoice Recipient", font=("Calibri", 18))
 title_label.grid(row=0, column=0, pady=10, columnspan=2)
