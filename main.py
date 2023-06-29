@@ -9,20 +9,72 @@ from docxtpl import DocxTemplate
 from datetime import date
 from docx2pdf import convert
 
-# Variables ---------------------------------------------------
+# Variables -------------------------------------------------------------------------------------------------------------------------------------
 global name
 global email
 global PO
 global area
 global zipCode
+invoice_list = []
 
-# Create Table ---------------------------------------------------
+# Create Tables ----------------------------------------------------------------------------------------------------------------------------------
 connProfile = sqlite3.connect("profile_data.db")
 profile_table_create_query = '''CREATE TABLE IF NOT EXISTS profile_data (name TEXT, email TEXT, PO_box TEXT, area TEXT, zip_code TEXT)'''
 connProfile.execute(profile_table_create_query)
 connProfile.close()
 
-# New Recipient ---------------------------------------------------
+connDesc = sqlite3.connect("description_data.db")
+desc_table_create_query = '''CREATE TABLE IF NOT EXISTS description_data (description TEXT)'''
+connDesc.execute(desc_table_create_query)
+connDesc.close()
+
+# New Recipient / New Description ---------------------------------------------------------------------------------------------------------------
+
+
+def new_desc():
+    new_win = tkinter.CTkToplevel()
+    new_win.title("Add a New Description")
+    new_win.attributes('-topmost', True)
+
+    instructionsR_label = CTkLabel(
+        new_win, text="Please enter the description you would like to add :", font=("Calibri", 16))
+    instructionsR_label.grid(row=1, column=0, padx=10, pady=5)
+
+    desc_label = CTkLabel(new_win, text="Description", font=("Calibri", 16))
+    desc_label.grid(row=2, column=0, pady=5)
+    desc_entry = CTkEntry(new_win)
+    desc_entry.grid(row=2, column=1, padx=10, pady=5)
+
+    def create_desc():
+        desc = desc_entry.get()
+
+        if desc:
+            # SQL INSERT
+            connDesc = sqlite3.connect("description_data.db")
+            Pdata_insert_query = ''' INSERT INTO description_data (name, email, PO_box, area, zip_code) VALUES (?, ?, ?, ?, ?) '''
+            Pdata_insert_tuple = (desc)
+            cursor = connDesc.cursor()
+            cursor.execute(Pdata_insert_query, Pdata_insert_tuple)
+            connDesc.commit()
+            connDesc.close()
+            messagebox.showinfo("Creation Successful",
+                                "A new description has been created!")
+            desc_entry.delete(0, tkinter.END)
+
+            desc_drop_menu.configure(values=description_option_box_values())
+        else:
+            messagebox.showwarning(
+                "Empty Fields", "Please complete all the fields")
+
+    add_desc_btn = CTkButton(
+        new_win, text="Add Recipient", command=create_desc)
+    add_item_btn.grid(row=7, column=0, padx=10, pady=10,
+                      columnspan=2, sticky="news")
+
+    close_btn = CTkButton(
+        new_win, text="Close", command=new_win.destroy)
+    close_btn.grid(row=8, column=0, padx=10, pady=10,
+                   columnspan=2, sticky="news")
 
 
 def new_recipient():
@@ -39,7 +91,8 @@ def new_recipient():
     name_entry = CTkEntry(new_win)
     name_entry.grid(row=2, column=1, padx=10, pady=5)
 
-    email_label = CTkLabel(new_win, text="Recipient Email Address", font=("Calibri", 16))
+    email_label = CTkLabel(
+        new_win, text="Recipient Email Address", font=("Calibri", 16))
     email_label.grid(row=3, column=0, pady=5)
     email_entry = CTkEntry(new_win)
     email_entry.grid(row=3, column=1, padx=10, pady=5)
@@ -68,7 +121,7 @@ def new_recipient():
 
         if name and email and PO and area and zipCode:
             # SQL INSERT
-            connProfile = sqlite3.connect("profile_data.db")
+            connProfile = sqlite3.connect("description_data.db")
             Pdata_insert_query = ''' INSERT INTO profile_data (name, email, PO_box, area, zip_code) VALUES (?, ?, ?, ?, ?) '''
             Pdata_insert_tuple = (name, email, PO, area, zipCode)
             cursor = connProfile.cursor()
@@ -82,6 +135,8 @@ def new_recipient():
             area_entry.delete(0, tkinter.END)
             PO_entry.delete(0, tkinter.END)
             zip_entry.delete(0, tkinter.END)
+
+            drop_menu.configure(values=recipient_option_box_values())
         else:
             messagebox.showwarning(
                 "Empty Fields", "Please complete all the fields")
@@ -96,7 +151,18 @@ def new_recipient():
     close_btn.grid(row=8, column=0, padx=10, pady=10,
                    columnspan=2, sticky="news")
 
-# Functions ---------------------------------------------------
+# Functions -------------------------------------------------------------------------------------------------------------------------------------
+
+
+def description_option_box_values():
+    connDesc = sqlite3.connect("description_data.db")
+    cursor = connDesc.cursor()
+    query = cursor.execute('SELECT name FROM description_data')
+
+    data = []
+    for row in cursor.fetchall():
+        data.append(row[0])
+    return data
 
 
 def recipient_option_box_values():
@@ -123,11 +189,6 @@ def update_invoice_number(new_invoice_number):
         file.write(str(new_invoice_number))
 
 
-def update_invoice_number(new_invoice_number):
-    with open("last_invoice_number.txt", "w") as file:
-        file.write(str(new_invoice_number))
-
-
 last_invoice_number = get_last_invoice_number()
 new_invoice_number = last_invoice_number + 1
 update_invoice_number(new_invoice_number)
@@ -136,20 +197,15 @@ update_invoice_number(new_invoice_number)
 def clear_items():
     qty_spin.delete(0, tkinter.END)
     qty_spin.insert(0, "1")
-    description_entry.delete(0, tkinter.END)
     rate_spin.delete(0, tkinter.END)
     rate_spin.insert(0, "0.0")
 
 
-invoice_list = []
-
-
 def add_item():
     qty = int(qty_spin.get())
-    desc = description_entry.get()
     rate = float(rate_spin.get())
     amount = qty*rate
-    invoice_item = [qty, desc, rate, amount]
+    invoice_item = [qty, rate, amount]
 
     tree.insert("", 0, values=invoice_item)
     clear_items()
@@ -216,92 +272,122 @@ def gen_invoice_pdf():
     messagebox.showinfo("Invoice Generation", "Invoice Completed")
 
 
-# Main Window ---------------------------------------------------
+# Main Window -----------------------------------------------------------------------------------------------------------------------------------
 mainWindow = tkinter.CTk()
 mainWindow.title("InvoiceAuto")
 
 tkinter.set_default_color_theme("green")
 
-frame = CTkFrame(mainWindow)
-frame.pack(padx=20, pady=20)
-
-title_label = CTkLabel(frame, text="InvoiceAuto : Automatic Invoice Generator", font=("Calibri", 20))
+title_label = CTkLabel(
+    mainWindow, text="InvoiceAuto : Automatic Invoice Generator", font=("Calibri", 22))
 title_label.grid(row=0, column=0, pady=10, columnspan=3)
 
-# Information to be entered by the user regarding recipient ---------------------------------------------------
+recipient_frame = CTkFrame(mainWindow, border_width=3)
+recipient_frame.grid(row=1, column=0, pady=10, padx=10)
+
+invoice_items_frame = CTkFrame(mainWindow, border_width=3)
+invoice_items_frame.grid(row=1, column=1, pady=10, padx=10)
+
+export_frame = CTkFrame(mainWindow, border_width=3)
+export_frame.grid(row=1, column=2, pady=10, padx=10)
+
+# Recipeint Frame -------------------------------------------------------------------------------------------------------------------------------
+title_label = CTkLabel(
+    recipient_frame, text="Invoice Recipient", font=("Calibri", 18))
+title_label.grid(row=0, column=0, pady=10, columnspan=2)
+
 selectR_label = tkinter.CTkLabel(
-    frame, text="Select the invoice recipient or add a new recipient", font=("Calibri", 16))
+    recipient_frame, font=("Calibri", 16))
 selectR_label.grid(row=1, column=0, padx=10, pady=10)
 
+drop_menu = tkinter.CTkOptionMenu(
+    recipient_frame, values=recipient_option_box_values())
+drop_menu.grid(row=1, column=1, padx=10, pady=10)
+
+if drop_menu._values:
+    drop_menu.configure(values=recipient_option_box_values())
+else:
+    drop_menu.set("Create a recipient")
+
 new_recipient_btn = CTkButton(
-    frame, text="Add a recipient", command=new_recipient)
-new_recipient_btn.grid(row=2, column=1,
+    recipient_frame, text="Add a recipient", command=new_recipient)
+new_recipient_btn.grid(row=2, column=0, columnspan=2, sticky="news",
                        padx=20, pady=10)
 
-drop_menu = tkinter.CTkOptionMenu(frame, values=recipient_option_box_values())
-drop_menu.grid(row=1, column=1)
-
-# Information entered by user regarding invoice item ---------------------------------------------------
+# Invoice Items Frame ---------------------------------------------------------------------------------------------------------------------------
 instructionsI_label = CTkLabel(
-    frame, text="Please enter all information regarding items to be added to the invoice :", font=("Calibri", 16))
-instructionsI_label.grid(row=5, column=0, padx=10, pady=5)
+    invoice_items_frame, text="Invoice Items", font=("Calibri", 18))
+instructionsI_label.grid(row=0, column=0, pady=5, columnspan=2)
 
-qty_label = CTkLabel(frame, text="Quantity", font=("Calibri", 16))
-qty_label.grid(row=6, column=0, pady=5)
-qty_spin = ttk.Spinbox(frame, from_=1, to=1000)
-qty_spin.grid(row=6, column=1, pady=5)
+qty_label = CTkLabel(invoice_items_frame,
+                     text="Select Quantity", font=("Calibri", 16))
+qty_label.grid(row=1, column=0, padx=10, pady=10)
+qty_spin = ttk.Spinbox(invoice_items_frame, from_=1, to=1000)
+qty_spin.grid(row=1, column=1, padx=10, pady=10)
 qty_spin.insert(0, "1")
 
-description_label = CTkLabel(frame, text="Select Description", font=("Calibri", 16))
-description_label.grid(row=7, column=0, pady=5)
-desc_drop_menu = tkinter.CTkOptionMenu(frame, values=["",""])
-desc_drop_menu.grid(row=7, column=1)
-new_desc_label = CTkLabel(frame, text="Add a new description (Optional)", font=("Calibri", 16))
-new_desc_label.grid(row=8, column=0, pady=5)
-description_entry = CTkEntry(frame)
-description_entry.grid(row=8, column=1, pady=5)
-add_desc_btn = CTkButton(frame, text="Add New Description")
-add_desc_btn.grid(row=9, column=1, pady=10)
-
-rate_label = CTkLabel(frame, text="Rate", font=("Calibri", 16))
-rate_label.grid(row=10, column=0, pady=5)
-rate_spin = ttk.Spinbox(frame, from_=1, to=1000000, increment=100)
-rate_spin.grid(row=10, column=1, pady=5)
+rate_label = CTkLabel(invoice_items_frame,
+                      text="Select Rate", font=("Calibri", 16))
+rate_label.grid(row=2, column=0, padx=10, pady=10)
+rate_spin = ttk.Spinbox(invoice_items_frame, from_=1,
+                        to=1000000, increment=100)
+rate_spin.grid(row=2, column=1, padx=10, pady=10)
 rate_spin.insert(0, "0.0")
 
-add_item_btn = CTkButton(frame, text="Add Item", command=add_item)
-add_item_btn.grid(row=11, column=0, pady=10)
+description_label = CTkLabel(
+    invoice_items_frame, text="Select Description", font=("Calibri", 16))
+description_label.grid(row=3, column=0, padx=10, pady=10)
+desc_drop_menu = tkinter.CTkOptionMenu(invoice_items_frame, values=["", ""])
+desc_drop_menu.grid(row=3, column=1, padx=10, pady=10)
 
-# Tree View ---------------------------------------------------
+if desc_drop_menu._values:
+    desc_drop_menu.configure(values=description_option_box_values())
+else:
+    desc_drop_menu.set("Create a description")
+
+add_item_btn = CTkButton(
+    invoice_items_frame, text="Add Item", command=add_item)
+add_item_btn.grid(row=4, column=0, columnspan=2,
+                  sticky="news", padx=10, pady=10)
+
+edit_desc_btn = CTkButton(
+    invoice_items_frame, text="Edit Description List", command=new_desc)
+edit_desc_btn.grid(row=5, column=0, columnspan=2,
+                   sticky="news", padx=10, pady=10)
+
+# Export Frame ----------------------------------------------------------------------------------------------------------------------------------
+export_frame_label = CTkLabel(
+    export_frame, text="Export Invoice", font=("Calibri", 18))
+export_frame_label.grid(row=0, column=0, pady=5, columnspan=2)
+
+save_invoicedocx_btn = CTkButton(
+    export_frame, text="Generate Word Invoice", font=("Calibri", 16), command=gen_invoice_docx)
+save_invoicedocx_btn.grid(row=1, column=0,
+                          sticky="news", padx=10, pady=10)
+
+save_invoicepdf_btn = CTkButton(
+    export_frame, text="Generate PDF Invoice", font=("Calibri", 16), command=gen_invoice_pdf)
+save_invoicepdf_btn.grid(row=2, column=0,
+                         sticky="news", padx=10, pady=10)
+
+email_btn = CTkButton(
+    export_frame, text="Send invoice to recipient through email", font=("Calibri", 16))
+email_btn.grid(row=3, column=0, sticky="news", padx=10, pady=10)
+
+# Tree View -------------------------------------------------------------------------------------------------------------------------------------
 columns = ("Quantity", "Description", "Rate", "Total")
-tree = ttk.Treeview(frame, columns=columns, show="headings")
+tree = ttk.Treeview(mainWindow, columns=columns, show="headings")
 
 tree.heading("Quantity", text="Quantity")
 tree.heading("Description", text="Description")
 tree.heading("Rate", text="Rate")
 tree.heading("Total", text="Total")
 
-tree.grid(row=1, column=2, rowspan=8, padx=20, pady=10)
-
-# Final Buttons ---------------------------------------------------
-save_invoicedocx_btn = CTkButton(
-    frame, text="Generate Word Invoice", command=gen_invoice_docx)
-save_invoicedocx_btn.grid(row=13, column=0, columnspan=3,
-                          sticky="news", padx=20, pady=5)
-
-save_invoicepdf_btn = CTkButton(
-    frame, text="Generate PDF Invoice", command=gen_invoice_pdf)
-save_invoicepdf_btn.grid(row=14, column=0, columnspan=3,
-                         sticky="news", padx=20, pady=5)
-
-email_btn = CTkButton(
-    frame, text="Send invoice to recipient through email")
-email_btn.grid(row=15, column=0, columnspan=3, sticky="news", padx=20, pady=5)
+tree.grid(row=2, column=0, rowspan=8, columnspan=3, padx=20, pady=10)
 
 new_invoice_btn = CTkButton(
-    frame, text="New Invoice", command=new_invoice)
-new_invoice_btn.grid(row=16, column=0, columnspan=3,
+    mainWindow, text="New Invoice", font=("Calibri", 16), command=new_invoice)
+new_invoice_btn.grid(row=10, column=0, columnspan=3,
                      sticky="news", padx=20, pady=10)
-
 
 mainWindow.mainloop()
