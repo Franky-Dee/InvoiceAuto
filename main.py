@@ -315,7 +315,7 @@ title_label = CTkLabel(
 title_label.grid(row=0, column=0, pady=10, columnspan=2)
 
 selectR_label = tkinter.CTkLabel(
-    recipient_frame, font=("Calibri", 16))
+    recipient_frame, text="Select a Recipient", font=("Calibri", 16))
 selectR_label.grid(row=1, column=0, padx=10, pady=10)
 
 drop_menu = tkinter.CTkOptionMenu(
