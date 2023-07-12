@@ -2,6 +2,8 @@ import datetime
 import customtkinter as tkinter
 import docx2pdf
 import sqlite3
+import os
+import win32com.client as win32
 from customtkinter import CTkLabel, CTkEntry, CTkButton, CTkFrame
 from tkinter import ttk
 from tkinter import messagebox
@@ -169,7 +171,42 @@ def new_recipient():
                    columnspan=2, sticky="news")
 
 # Functions -------------------------------------------------------------------------------------------------------------------------------------
-
+def send_email(): 
+    connProfile = sqlite3.connect("profile_data.db")
+    cursor = connProfile.cursor()
+    
+    selected_name = drop_menu.get()
+    cursor.execute("SELECT * FROM  profile_data WHERE name=?", (selected_name,))
+    data = cursor.fetchone()
+    
+    if data:
+        name = data[0]
+        email = data[1]
+        PO = data[2]
+        area = data[3]
+        zipCode = data[4]
+        
+    cursor.close()
+    connProfile.close()
+    
+    gen_invoice_pdf()
+    
+    olApp = win32.Dispatch('Outlook.Application')
+    olNS = olApp.GetNameSpace('MAPI')
+    
+    mail_item = olApp.CreateItem(0)
+    mail_item.Subject = "G7 Invoice"
+    mail_item.BodyFormat = 1
+    mail_item.Body = "Please find the G7 invoice attatched and correspond accordingly"
+    mail_item.To = email
+    
+    mail_item.Attachments.Add(os.path.join(os.getcwd(), pdf_name))
+    
+    mail_item.Display()
+    mail_item.Save()
+    mail_item.Send()
+    
+    messagebox.showinfo("Auto Email", "The invoice has been emailed to the recipient")
 
 def description_option_box_values():
     connDesc = sqlite3.connect("description_data.db")
@@ -309,11 +346,12 @@ def gen_invoice_pdf():
         "total": total
     })
 
-    doc_name = "new_invoice " + name + " " + \
+    global pdf_name
+    pdf_name = "new_invoice " + name + " " + \
         datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S") + ".docx"
-    doc.save(doc_name)
+    doc.save(pdf_name)
 
-    convert(doc_name)
+    convert(pdf_name)
 
     messagebox.showinfo("Invoice Generation", "Invoice Completed")
 
@@ -417,7 +455,7 @@ save_invoicepdf_btn.grid(row=2, column=0,
                          sticky="news", padx=10, pady=10)
 
 email_btn = CTkButton(
-    export_frame, text="Send invoice to recipient through email", font=("Calibri", 16))
+    export_frame, text="Send invoice to recipient through email", font=("Calibri", 16), command=send_email)
 email_btn.grid(row=3, column=0, sticky="news", padx=10, pady=10)
 
 # Tree View -------------------------------------------------------------------------------------------------------------------------------------
