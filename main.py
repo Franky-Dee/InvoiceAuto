@@ -347,11 +347,15 @@ def gen_invoice_pdf():
     })
 
     global pdf_name
-    pdf_name = "new_invoice " + name + " " + \
+    
+    docx_name = "new_invoice " + name + " " + \
         datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S") + ".docx"
-    doc.save(pdf_name)
+        
+    pdf_name = "new_invoice " + name + " " + \
+        datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S") + ".pdf"
+    doc.save(docx_name)
 
-    convert(pdf_name)
+    convert(docx_name, pdf_name)
 
     messagebox.showinfo("Invoice Generation", "Invoice Completed")
 
