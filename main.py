@@ -35,7 +35,7 @@ def fetch_profile_data():
     cursor = connProfile.cursor()
     
     selected_name = drop_menu.get()
-    cursor.execute("SELECT * FROM  profile_data WHERE name=?", (selected_name))
+    cursor.execute("SELECT * FROM  profile_data WHERE name=?", (selected_name,))
     data = cursor.fetchone()
     
     if data:
@@ -240,7 +240,21 @@ def new_invoice():
 
 def gen_invoice_docx():
     doc = DocxTemplate("invoice_template.docx")
-    fetch_profile_data()
+    connProfile = sqlite3.connect("profile_data.db")
+    cursor = connProfile.cursor()
+    selected_name = drop_menu.get()
+    cursor.execute("SELECT * FROM  profile_data WHERE name=?", (selected_name,))
+    data = cursor.fetchone()
+    
+    if data:
+        name = data[0]
+        email = data[1]
+        PO = data[2]
+        area = data[3]
+        zipCode = data[4]
+        
+    cursor.close()
+    connProfile.close()
     total = sum(item[3] for item in invoice_list)
     current_date = date.today()
     inNo = new_invoice_number
@@ -267,7 +281,21 @@ def gen_invoice_docx():
 
 def gen_invoice_pdf():
     doc = DocxTemplate("invoice_template.docx")
-    # Variables = SELECT from db WHERE name = combo
+    connProfile = sqlite3.connect("profile_data.db")
+    cursor = connProfile.cursor()
+    selected_name = drop_menu.get()
+    cursor.execute("SELECT * FROM  profile_data WHERE name=?", (selected_name,))
+    data = cursor.fetchone()
+    
+    if data:
+        name = data[0]
+        email = data[1]
+        PO = data[2]
+        area = data[3]
+        zipCode = data[4]
+        
+    cursor.close()
+    connProfile.close()
     total = sum(item[3] for item in invoice_list)
     current_date = date.today()
 
