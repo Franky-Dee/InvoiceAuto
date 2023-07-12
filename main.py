@@ -139,7 +139,6 @@ def new_recipient():
         zipCode = zip_entry.get()
 
         if name and email and PO and area and zipCode:
-            # SQL INSERT
             connProfile = sqlite3.connect("profile_data.db")
             Pdata_insert_query = ''' INSERT INTO profile_data (name, email, PO_box, area, zip_code) VALUES (?, ?, ?, ?, ?) '''
             Pdata_insert_tuple = (name, email, PO, area, zipCode)
@@ -197,7 +196,7 @@ def send_email():
     mail_item = olApp.CreateItem(0)
     mail_item.Subject = "G7 Invoice"
     mail_item.BodyFormat = 1
-    mail_item.Body = "Please find the G7 invoice attatched and correspond accordingly"
+    mail_item.Body = "Please find the G7 invoice attatched and correspond accordingly."
     mail_item.To = email
     
     mail_item.Attachments.Add(os.path.join(os.getcwd(), pdf_name))
@@ -363,6 +362,7 @@ def gen_invoice_pdf():
 # Main Window -----------------------------------------------------------------------------------------------------------------------------------
 mainWindow = tkinter.CTk()
 mainWindow.title("InvoiceAuto")
+mainWindow.iconbitmap("favicon.ico")
 
 tkinter.set_default_color_theme("green")
 
