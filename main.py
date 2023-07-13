@@ -362,7 +362,6 @@ def gen_invoice_pdf():
 # Main Window -----------------------------------------------------------------------------------------------------------------------------------
 mainWindow = tkinter.CTk()
 mainWindow.title("InvoiceAuto")
-mainWindow.iconbitmap("favicon.ico")
 
 tkinter.set_default_color_theme("green")
 
