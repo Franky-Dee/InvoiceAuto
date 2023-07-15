@@ -33,6 +33,7 @@ connDesc.close()
 
 # New Recipient / New Description ---------------------------------------------------------------------------------------------------------------
 def fetch_profile_data():
+    global name
     connProfile = sqlite3.connect("profile_data.db")
     cursor = connProfile.cursor()
     
