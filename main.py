@@ -31,7 +31,7 @@ desc_table_create_query = '''CREATE TABLE IF NOT EXISTS description_data (descri
 connDesc.execute(desc_table_create_query)
 connDesc.close()
 
-# New Recipient / New Description ---------------------------------------------------------------------------------------------------------------
+# Create/Delete/Edit Recipient / Description ---------------------------------------------------------------------------------------------------------------
 def fetch_profile_data():
     global name
     connProfile = sqlite3.connect("profile_data.db")
@@ -170,6 +170,53 @@ def new_recipient():
     close_btn.grid(row=8, column=0, padx=10, pady=10,
                    columnspan=2, sticky="news")
 
+def delete_recipient():
+    delete_win = tkinter.CTkToplevel()
+    delete_win.title("Delete a recipient")
+    delete_win.attributes('-topmost', True)
+
+    instructionsR_label = CTkLabel(
+        delete_win, text="Please select the recipient you would like to remove from the list:", font=("Calibri", 16))
+    instructionsR_label.grid(row=0, column=0, padx=10, pady=5)
+
+    recipient_label = CTkLabel(delete_win, text="Recipient :", font=("Calibri", 16))
+    recipient_label.grid(row=1, column=0, pady=5)
+    recipient_option_menu = tkinter.CTkOptionMenu(
+    delete_win, values=recipient_option_box_values())
+    recipient_option_menu.grid(row=1, column=1, padx=10, pady=10)
+
+    if  recipient_option_menu._values:
+         recipient_option_menu.configure(values=recipient_option_box_values())
+    else:
+        recipient_option_menu.set("There are no recipients to delete")
+    
+    def delete_recipient_entry():
+        recipient =  recipient_option_menu.get()
+
+        if recipient:
+            connDesc = sqlite3.connect("profile_data.db") 
+            cursor = connDesc.cursor()
+            cursor.execute("DELETE FROM profile_data WHERE name=?", (recipient,))
+            connDesc.commit()
+            connDesc.close()
+            messagebox.showinfo("Deletion Successful",
+                                "The selected user has been deleted")
+            recipient_option_menu.configure(values=recipient_option_box_values())
+            drop_menu.configure(values=recipient_option_box_values())
+        else:
+            messagebox.showwarning(
+                "Empty Fields", "Please select the recipient you would like to delete")
+
+    add_desc_btn = CTkButton(
+        delete_win, text="Delete Recipient", command=delete_recipient_entry)
+    add_desc_btn.grid(row=2, column=0, padx=10, pady=10,
+                      columnspan=2, sticky="news")
+
+    close_btn = CTkButton(
+        delete_win, text="Close", command=delete_win.destroy)
+    close_btn.grid(row=3, column=0, padx=10, pady=10,
+                   columnspan=2, sticky="news")
+   
 # Functions -------------------------------------------------------------------------------------------------------------------------------------
 def send_email(): 
     connProfile = sqlite3.connect("profile_data.db")
@@ -398,10 +445,19 @@ else:
     drop_menu.set("Create a recipient")
 
 new_recipient_btn = CTkButton(
-    recipient_frame, text="Add a recipient", command=new_recipient)
+    recipient_frame, text="Create a new recipient", command=new_recipient)
 new_recipient_btn.grid(row=2, column=0, columnspan=2, sticky="news",
                        padx=20, pady=10)
 
+edit_recipient_btn = CTkButton(
+    recipient_frame, text="Edit recipient details")
+edit_recipient_btn.grid(row=3, column=0, columnspan=2, sticky="news",
+                       padx=20, pady=10)
+
+delete_recipient_btn = CTkButton(
+    recipient_frame, text="Delete a recipient", command= delete_recipient)
+delete_recipient_btn.grid(row=4, column=0, columnspan=2, sticky="news",
+                       padx=20, pady=10)
 # Invoice Items Frame ---------------------------------------------------------------------------------------------------------------------------
 instructionsI_label = CTkLabel(
     invoice_items_frame, text="Invoice Items", font=("Calibri", 18))
@@ -433,15 +489,15 @@ if desc_drop_menu._values:
 else:
     desc_drop_menu.set("Create a description")
 
-add_item_btn = CTkButton(
-    invoice_items_frame, text="Add Item", command=add_item)
-add_item_btn.grid(row=4, column=0, columnspan=2,
-                  sticky="news", padx=10, pady=10)
-
 edit_desc_btn = CTkButton(
     invoice_items_frame, text="Edit Description List", command=new_desc)
-edit_desc_btn.grid(row=5, column=0, columnspan=2,
+edit_desc_btn.grid(row=4, column=0, columnspan=2,
                    sticky="news", padx=10, pady=10)
+
+add_item_btn = CTkButton(
+    invoice_items_frame, text="Add Item To Invoice", command=add_item)
+add_item_btn.grid(row=5, column=0, columnspan=2,
+                  sticky="news", padx=10, pady=10)
 
 # Export Frame ----------------------------------------------------------------------------------------------------------------------------------
 export_frame_label = CTkLabel(
