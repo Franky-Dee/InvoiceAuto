@@ -1,0 +1,9 @@
+1. Die saved invoice het nie die detail op nie, sien die aangehegde invoice
+2. Ek moet dus elke keer na die ander file op my desktop gaan en van daar af stuur? Kan dit direk stuur vanaf die Invoice sisteem?
+3. Kan nie n invoice edit nie
+4. Kan nie skole se detail edit nie
+5. File skep vir elke skool sodat dit automaties daar kan save
+6. Moontlikheid om a discount opsie in te sit asook n krediet opsie?
+7. Nama van skole in alfabetiese volgorde
+8. 2 de email opsie, sommige skole het 2 ontvangers
+9. Dekbriefie skep met elke skool se ontvangende person se naam by

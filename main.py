@@ -374,7 +374,7 @@ def description_option_box_values():
 def recipient_option_box_values():
     connProfile = sqlite3.connect("profile_data.db")
     cursor = connProfile.cursor()
-    query = cursor.execute('SELECT name FROM profile_data')
+    query = cursor.execute('SELECT name FROM profile_data ORDER BY name')
 
     data = []
     for row in cursor.fetchall():
