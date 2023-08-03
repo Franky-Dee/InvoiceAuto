@@ -32,25 +32,28 @@ connDesc.execute(desc_table_create_query)
 connDesc.close()
 
 # Create/Delete/Edit Recipient / Description ---------------------------------------------------------------------------------------------------------------
+
+
 def fetch_profile_data():
     global name
     connProfile = sqlite3.connect("profile_data.db")
     cursor = connProfile.cursor()
-    
+
     selected_name = drop_menu.get()
-    cursor.execute("SELECT * FROM  profile_data WHERE name=?", (selected_name,))
+    cursor.execute("SELECT * FROM  profile_data WHERE name=?",
+                   (selected_name,))
     data = cursor.fetchone()
-    
+
     if data:
         name = data[0]
         email = data[1]
         PO = data[2]
         area = data[3]
         zipCode = data[4]
-        
+
     cursor.close()
     connProfile.close()
-    
+
 
 def new_desc():
     new_win = tkinter.CTkToplevel()
@@ -170,6 +173,7 @@ def new_recipient():
     close_btn.grid(row=8, column=0, padx=10, pady=10,
                    columnspan=2, sticky="news")
 
+
 def delete_recipient():
     delete_win = tkinter.CTkToplevel()
     delete_win.title("Delete a recipient")
@@ -179,29 +183,32 @@ def delete_recipient():
         delete_win, text="Please select the recipient you would like to remove from the list:", font=("Calibri", 16))
     instructionsR_label.grid(row=0, column=0, padx=10, pady=5)
 
-    recipient_label = CTkLabel(delete_win, text="Recipient :", font=("Calibri", 16))
+    recipient_label = CTkLabel(
+        delete_win, text="Recipient :", font=("Calibri", 16))
     recipient_label.grid(row=1, column=0, pady=5)
     recipient_option_menu = tkinter.CTkOptionMenu(
-    delete_win, values=recipient_option_box_values())
+        delete_win, values=recipient_option_box_values())
     recipient_option_menu.grid(row=1, column=1, padx=10, pady=10)
 
-    if  recipient_option_menu._values:
-         recipient_option_menu.configure(values=recipient_option_box_values())
+    if recipient_option_menu._values:
+        recipient_option_menu.configure(values=recipient_option_box_values())
     else:
         recipient_option_menu.set("There are no recipients to delete")
-    
+
     def delete_recipient_entry():
-        recipient =  recipient_option_menu.get()
+        recipient = recipient_option_menu.get()
 
         if recipient:
-            connDesc = sqlite3.connect("profile_data.db") 
+            connDesc = sqlite3.connect("profile_data.db")
             cursor = connDesc.cursor()
-            cursor.execute("DELETE FROM profile_data WHERE name=?", (recipient,))
+            cursor.execute(
+                "DELETE FROM profile_data WHERE name=?", (recipient,))
             connDesc.commit()
             connDesc.close()
             messagebox.showinfo("Deletion Successful",
                                 "The selected user has been deleted")
-            recipient_option_menu.configure(values=recipient_option_box_values())
+            recipient_option_menu.configure(
+                values=recipient_option_box_values())
             drop_menu.configure(values=recipient_option_box_values())
         else:
             messagebox.showwarning(
@@ -216,44 +223,142 @@ def delete_recipient():
         delete_win, text="Close", command=delete_win.destroy)
     close_btn.grid(row=3, column=0, padx=10, pady=10,
                    columnspan=2, sticky="news")
-   
+
+
+def edit_recipient():
+    edit_recipient_win = tkinter.CTkToplevel()
+    edit_recipient_win.title("Edit Recipient Information")
+    edit_recipient_win.attributes('-topmost', True)
+
+    instructionsR_label = CTkLabel(
+        edit_recipient_win, text="Please select the recipient whose information you want to update :", font=("Calibri", 16))
+    instructionsR_label.grid(row=1, column=0, padx=10, pady=5)
+
+    recipient_option_menu = tkinter.CTkOptionMenu(
+        edit_recipient_win, values=recipient_option_box_values())
+    recipient_option_menu.grid(row=1, column=1, padx=10, pady=10)
+
+    if recipient_option_menu._values:
+        recipient_option_menu.configure(values=recipient_option_box_values())
+    else:
+        recipient_option_menu.set("There are no recipients to update")
+
+    instructionsR_label = CTkLabel(
+        edit_recipient_win, text="Please enter all new information regarding the recipient :", font=("Calibri", 16))
+    instructionsR_label.grid(row=2, column=0, padx=10, pady=5)
+
+    name_label = CTkLabel(edit_recipient_win,
+                          text="Recipient Name", font=("Calibri", 16))
+    name_label.grid(row=3, column=0, pady=5)
+    name_entry = CTkEntry(edit_recipient_win)
+    name_entry.grid(row=3, column=1, padx=10, pady=5)
+
+    email_label = CTkLabel(
+        edit_recipient_win, text="Recipient Email Address", font=("Calibri", 16))
+    email_label.grid(row=4, column=0, pady=5)
+    email_entry = CTkEntry(edit_recipient_win)
+    email_entry.grid(row=4, column=1, padx=10, pady=5)
+
+    PO_label = CTkLabel(edit_recipient_win,
+                        text="P.O. Box", font=("Calibri", 16))
+    PO_label.grid(row=5, column=0, pady=5)
+    PO_entry = CTkEntry(edit_recipient_win)
+    PO_entry.grid(row=5, column=1, padx=10, pady=5)
+
+    area_label = CTkLabel(edit_recipient_win,
+                          text="Recipient Area", font=("Calibri", 16))
+    area_label.grid(row=6, column=0, pady=5)
+    area_entry = CTkEntry(edit_recipient_win)
+    area_entry.grid(row=6, column=1, padx=10, pady=5)
+
+    zip_label = CTkLabel(edit_recipient_win,
+                         text="Zip Code", font=("Calibri", 16))
+    zip_label.grid(row=7, column=0, pady=5)
+    zip_entry = CTkEntry(edit_recipient_win)
+    zip_entry.grid(row=7, column=1, padx=10, pady=5)
+
+    recipient = recipient_option_menu.get()
+
+    def edit_profile():
+        name = name_entry.get()
+        email = email_entry.get()
+        PO = PO_entry.get()
+        area = area_entry.get()
+        zipCode = zip_entry.get()
+
+        if name and email and PO and area and zipCode:
+            connProfile = sqlite3.connect("profile_data.db")
+            cursorProfile = connProfile.cursor()
+            # insert sql update here
+            update_sql = """UPDATE profile_data SET name = ?, email = ?, PO_box = ?, area = ?, zip_code = ? WHERE name = ?;"""
+            cursorProfile.execute(update_sql, (name, email, PO, area, zipCode, recipient))
+            connProfile.commit()
+            connProfile.close()
+            messagebox.showinfo("Update Successful",
+                                "The new recipient information has been updated")
+            name_entry.delete(0, tkinter.END)
+            email_entry.delete(0, tkinter.END)
+            area_entry.delete(0, tkinter.END)
+            PO_entry.delete(0, tkinter.END)
+            zip_entry.delete(0, tkinter.END)
+
+            drop_menu.configure(values=recipient_option_box_values())
+        else:
+            messagebox.showwarning(
+                "Empty Fields", "Please complete all the fields")
+
+    update_profile_btn = CTkButton(
+        edit_recipient_win, text="Update Recipient Information", command=edit_profile)
+    update_profile_btn.grid(row=8, column=0, padx=10, pady=10,
+                            columnspan=2, sticky="news")
+
+    close_btn = CTkButton(
+        edit_recipient_win, text="Close", command=edit_recipient_win.destroy)
+    close_btn.grid(row=9, column=0, padx=10, pady=10,
+                   columnspan=2, sticky="news")
+
 # Functions -------------------------------------------------------------------------------------------------------------------------------------
-def send_email(): 
+
+
+def send_email():
     connProfile = sqlite3.connect("profile_data.db")
     cursor = connProfile.cursor()
-    
+
     selected_name = drop_menu.get()
-    cursor.execute("SELECT * FROM  profile_data WHERE name=?", (selected_name,))
+    cursor.execute("SELECT * FROM  profile_data WHERE name=?",
+                   (selected_name,))
     data = cursor.fetchone()
-    
+
     if data:
         name = data[0]
         email = data[1]
         PO = data[2]
         area = data[3]
         zipCode = data[4]
-        
+
     cursor.close()
     connProfile.close()
-    
+
     gen_invoice_pdf()
-    
+
     olApp = win32.Dispatch('Outlook.Application')
     olNS = olApp.GetNameSpace('MAPI')
-    
+
     mail_item = olApp.CreateItem(0)
     mail_item.Subject = "G7 Invoice"
     mail_item.BodyFormat = 1
     mail_item.Body = "Please find the G7 invoice attatched and correspond accordingly."
     mail_item.To = email
-    
+
     mail_item.Attachments.Add(os.path.join(os.getcwd(), pdf_name))
-    
+
     mail_item.Display()
     mail_item.Save()
     mail_item.Send()
-    
-    messagebox.showinfo("Auto Email", "The invoice has been emailed to the recipient")
+
+    messagebox.showinfo(
+        "Auto Email", "The invoice has been emailed to the recipient")
+
 
 def description_option_box_values():
     connDesc = sqlite3.connect("description_data.db")
@@ -327,16 +432,17 @@ def gen_invoice_docx():
     connProfile = sqlite3.connect("profile_data.db")
     cursor = connProfile.cursor()
     selected_name = drop_menu.get()
-    cursor.execute("SELECT * FROM  profile_data WHERE name=?", (selected_name,))
+    cursor.execute("SELECT * FROM  profile_data WHERE name=?",
+                   (selected_name,))
     data = cursor.fetchone()
-    
+
     if data:
         name = data[0]
         email = data[1]
         PO = data[2]
         area = data[3]
         zipCode = data[4]
-        
+
     cursor.close()
     connProfile.close()
     total = sum(item[3] for item in invoice_list)
@@ -368,16 +474,17 @@ def gen_invoice_pdf():
     connProfile = sqlite3.connect("profile_data.db")
     cursor = connProfile.cursor()
     selected_name = drop_menu.get()
-    cursor.execute("SELECT * FROM  profile_data WHERE name=?", (selected_name,))
+    cursor.execute("SELECT * FROM  profile_data WHERE name=?",
+                   (selected_name,))
     data = cursor.fetchone()
-    
+
     if data:
         name = data[0]
         email = data[1]
         PO = data[2]
         area = data[3]
         zipCode = data[4]
-        
+
     cursor.close()
     connProfile.close()
     total = sum(item[3] for item in invoice_list)
@@ -394,10 +501,10 @@ def gen_invoice_pdf():
     })
 
     global pdf_name
-    
+
     docx_name = "new_invoice " + name + " " + \
         datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S") + ".docx"
-        
+
     pdf_name = "new_invoice " + name + " " + \
         datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S") + ".pdf"
     doc.save(docx_name)
@@ -450,14 +557,14 @@ new_recipient_btn.grid(row=2, column=0, columnspan=2, sticky="news",
                        padx=20, pady=10)
 
 edit_recipient_btn = CTkButton(
-    recipient_frame, text="Edit recipient details")
+    recipient_frame, text="Edit recipient details", command=edit_recipient)
 edit_recipient_btn.grid(row=3, column=0, columnspan=2, sticky="news",
-                       padx=20, pady=10)
+                        padx=20, pady=10)
 
 delete_recipient_btn = CTkButton(
-    recipient_frame, text="Delete a recipient", command= delete_recipient)
+    recipient_frame, text="Delete a recipient", command=delete_recipient)
 delete_recipient_btn.grid(row=4, column=0, columnspan=2, sticky="news",
-                       padx=20, pady=10)
+                          padx=20, pady=10)
 # Invoice Items Frame ---------------------------------------------------------------------------------------------------------------------------
 instructionsI_label = CTkLabel(
     invoice_items_frame, text="Invoice Items", font=("Calibri", 18))
@@ -490,7 +597,7 @@ else:
     desc_drop_menu.set("Create a description")
 
 edit_desc_btn = CTkButton(
-    invoice_items_frame, text="Edit Description List", command=new_desc)
+    invoice_items_frame, text="Create a New Description", command=new_desc)
 edit_desc_btn.grid(row=4, column=0, columnspan=2,
                    sticky="news", padx=10, pady=10)
 
